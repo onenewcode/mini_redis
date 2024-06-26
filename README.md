@@ -48,3 +48,9 @@ help: to force the async block to take ownership of `v` (and any other
 9 |     });
   |
 ```
+
+# 依赖
+## bytes 
+我们使用 Vec<u8> 来保存目标数据，但是它有一个问题，对它进行克隆时会将底层数据也整个复制一份，效率很低，但是克隆操作对于我们在多连接间共享数据又是必不可少的。
+
+因此这里咱们新引入一个 bytes 包，它包含一个 Bytes 类型，当对该类型的值进行克隆时，就不再会克隆底层数据。事实上，Bytes 是一个引用计数类型，跟 Arc 非常类似，或者准确的说，Bytes 就是基于 Arc 实现的，但相比后者Bytes 提供了一些额外的能力。
