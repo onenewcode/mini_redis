@@ -1,56 +1,37 @@
-use tokio::net::{TcpListener, TcpStream};
-use mini_redis::{Connection, Frame};
-use bytes::Bytes;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-// 定义别名
-type Db = Arc<Mutex<HashMap<String, Bytes>>>;
+//! mini-redis server.
+//!
+//! This file is the entry point for the server implemented in the library. It
+//! performs command line parsing and passes the arguments on to
+//! `mini_redis::server`.
+//!
+//! The `clap` crate is used for parsing arguments.
+
+use mini_redis::{server, DEFAULT_PORT};
+
+use structopt::StructOpt;
+use tokio::net::TcpListener;
+use tokio::signal;
+
 #[tokio::main]
-async fn main() {
-    // Bind the listener to the address
-    // 监听指定地址，等待 TCP 连接进来
-    let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
-    // 启动服务
-    println!("Listening");
-    // 创建共享的db存储，用于不同的链接之间共享数据
-    let db=Arc::new(Mutex::new(HashMap::new()));
+pub async fn main() -> mini_redis::Result<()> {
+    // enable logging
+    // see https://docs.rs/tracing for more info
+    tracing_subscriber::fmt::try_init()?;
 
-    loop {
-        let (socket, _) = listener.accept().await.unwrap();
-          // 将 handle 克隆一份
-          let db = db.clone();
+    let cli = Cli::from_args();
+    let port = cli.port.as_deref().unwrap_or(DEFAULT_PORT);
 
-          println!("Accepted");
-          tokio::spawn(async move {
-              process(socket, db).await;
-          });
-      }
+    // Bind a TCP listener
+    let listener = TcpListener::bind(&format!("127.0.0.1:{}", port)).await?;
+
+    server::run(listener, signal::ctrl_c()).await;
+
+    Ok(())
 }
 
-
-async fn process(socket: TcpStream, db: Db) {
-    use mini_redis::Command::{self, Get, Set};
-
-    let mut connection = Connection::new(socket);
-
-    while let Some(frame) = connection.read_frame().await.unwrap() {
-        let response = match Command::from_frame(frame).unwrap() {
-            Set(cmd) => {
-                let mut db = db.lock().unwrap(); // 代码块结束的时候释放锁
-                db.insert(cmd.key().to_string(), cmd.value().clone());
-                Frame::Simple("OK".to_string())
-            }
-            Get(cmd) => {
-                let db = db.lock().unwrap();
-                if let Some(value) = db.get(cmd.key()) {
-                    Frame::Bulk(value.clone())
-                } else {
-                    Frame::Null
-                }
-            }
-            cmd => panic!("unimplemented {:?}", cmd),
-        };
-
-        connection.write_frame(&response).await.unwrap();
-    }
+#[derive(StructOpt, Debug)]
+#[structopt(name = "mini-redis-server", version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"), about = "A Redis server")]
+struct Cli {
+    #[structopt(name = "port", long = "--port")]
+    port: Option<String>,
 }
