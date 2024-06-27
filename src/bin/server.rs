@@ -1,13 +1,12 @@
 // 服务器
 use mini_redis::{server, DEFAULT_PORT};
-
 use structopt::StructOpt;
 use tokio::net::TcpListener;
 use tokio::signal;
 
 #[tokio::main]
 pub async fn main() -> mini_redis::Result<()> {
-    // enable logging
+    // 开启收集日志
     // see https://docs.rs/tracing for more info
     tracing_subscriber::fmt::try_init()?;
 
