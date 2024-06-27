@@ -1,11 +1,4 @@
-//! mini-redis server.
-//!
-//! This file is the entry point for the server implemented in the library. It
-//! performs command line parsing and passes the arguments on to
-//! `mini_redis::server`.
-//!
-//! The `clap` crate is used for parsing arguments.
-
+// 服务器
 use mini_redis::{server, DEFAULT_PORT};
 
 use structopt::StructOpt;
