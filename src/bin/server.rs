@@ -7,7 +7,7 @@ use tokio::signal;
 #[tokio::main]
 pub async fn main() -> mini_redis::Result<()> {
     // 开启收集日志
-    // see https://docs.rs/tracing for more info
+    // see https://docs.rs/tracing for more info 初始化日志记录系统,默认在控制台输出
     tracing_subscriber::fmt::try_init()?;
 
     let cli = Cli::from_args();

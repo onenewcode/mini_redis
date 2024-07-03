@@ -11,14 +11,14 @@ use std::{fmt, str, vec};
 /// uses a `Parse` to extract its fields.
 #[derive(Debug)]
 pub(crate) struct Parse {
-    /// Array frame iterator.
-    parts: vec::IntoIter<Frame>,
+    /// Array frame iterator. 迭代时会被消费
+    parts: vec::IntoIter<Frame>, 
 }
-
+///       遇到  
 /// Error encountered while parsing a frame.
 ///
 /// Only `EndOfStream` errors are handled at runtime. All other errors result in
-/// the connection being terminated.
+/// the connection being terminated. 终止
 #[derive(Debug)]
 pub(crate) enum ParseError {
     /// Attempting to extract a value failed due to the frame being fully

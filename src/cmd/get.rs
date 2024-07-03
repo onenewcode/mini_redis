@@ -2,7 +2,7 @@ use crate::{Connection, Db, Frame, Parse};
 
 use bytes::Bytes;
 use tracing::{debug, instrument};
-
+/// 只能存储string，不存在返回nil
 /// Get the value of key.
 ///
 /// If the key does not exist the special value nil is returned. An error is
@@ -16,6 +16,7 @@ pub struct Get {
 
 impl Get {
     /// Create a new `Get` command which fetches `key`.
+    /// 输入的值必须实现ToString特征
     pub fn new(key: impl ToString) -> Get {
         Get {
             key: key.to_string(),
@@ -28,7 +29,7 @@ impl Get {
     }
 
     /// Parse a `Get` instance from a received frame.
-    ///
+    ///                                 游标    
     /// The `Parse` argument provides a cursor-like API to read fields from the
     /// `Frame`. At this point, the entire frame has already been received from
     /// the socket.
@@ -46,7 +47,7 @@ impl Get {
     ///
     /// ```text
     /// GET key
-    /// ```
+    /// pub(crate)表示这个函数只在这个crate（模块）内部可见
     pub(crate) fn parse_frames(parse: &mut Parse) -> crate::Result<Get> {
         // The `GET` string has already been consumed. The next value is the
         // name of the key to get. If the next value is not a string or the
@@ -55,7 +56,7 @@ impl Get {
 
         Ok(Get { key })
     }
-
+    ///                                               实例
     /// Apply the `Get` command to the specified `Db` instance.
     ///
     /// The response is written to `dst`. This is called by the server in order
