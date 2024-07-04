@@ -182,13 +182,14 @@ impl PartialEq<&str> for Frame {
         }
     }
 }
-
+/// 用于转换成字符串
 impl fmt::Display for Frame {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         use std::str;
 
         match self {
             Frame::Simple(response) => response.fmt(fmt),
+            // 利用write!宏向fmt（&mut fmt::Formatter）写入一个格式化的字符串
             Frame::Error(msg) => write!(fmt, "error: {}", msg),
             Frame::Integer(num) => num.fmt(fmt),
             Frame::Bulk(msg) => match str::from_utf8(msg) {
@@ -211,23 +212,23 @@ impl fmt::Display for Frame {
         }
     }
 }
-
+/// 预览数据
 fn peek_u8(src: &mut Cursor<&[u8]>) -> Result<u8, Error> {
     if !src.has_remaining() {
         return Err(Error::Incomplete);
     }
-
+    // 不会改变游标进行预览数据
     Ok(src.chunk()[0])
 }
-
+/// 消费数据
 fn get_u8(src: &mut Cursor<&[u8]>) -> Result<u8, Error> {
     if !src.has_remaining() {
         return Err(Error::Incomplete);
     }
-
+    // 会消费掉字节
     Ok(src.get_u8())
 }
-
+/// 跳过指定的字节
 fn skip(src: &mut Cursor<&[u8]>, n: usize) -> Result<(), Error> {
     if src.remaining() < n {
         return Err(Error::Incomplete);
@@ -236,13 +237,12 @@ fn skip(src: &mut Cursor<&[u8]>, n: usize) -> Result<(), Error> {
     src.advance(n);
     Ok(())
 }
-
-/// Read a new-line terminated decimal
+/// 转换成十进制
+/// Read a new-line terminated decimal 十进制
 fn get_decimal(src: &mut Cursor<&[u8]>) -> Result<u64, Error> {
     use atoi::atoi;
 
     let line = get_line(src)?;
-
     atoi::<u64>(line).ok_or_else(|| "protocol error; invalid frame format".into())
 }
 
@@ -254,6 +254,7 @@ fn get_line<'a>(src: &mut Cursor<&'a [u8]>) -> Result<&'a [u8], Error> {
     let end = src.get_ref().len() - 1;
 
     for i in start..end {
+        //  检测换行符
         if src.get_ref()[i] == b'\r' && src.get_ref()[i + 1] == b'\n' {
             // We found a line, update the position to be *after* the \n
             src.set_position((i + 2) as u64);
