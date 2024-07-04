@@ -22,3 +22,14 @@ tracing-subscriber = { version = "0.3.18" }
 async-stream=" 0.3.5"
 structopt = "0.3.26"
 clap = { version = "4.5.8", features = ["derive"] }
+# Implements the types defined in the OTel spec
+opentelemetry =  { version = "0.23.0", optional = true }
+# Allows you to send data to the OTel collector
+opentelemetry-otlp = { version = "0.16.0", optional = true } 
+# Integration between the tracing crate and the opentelemetry crate
+tracing-opentelemetry ={ version = "0.24.0", optional = true }  
+# Provides a "propagator" to pass along an XrayId across sevices
+opentelemetry-aws = { version =  "0.11.0", optional = true } 
+# 引入features
+[features]
+otel = ["dep:opentelemetry", "dep:tracing-opentelemetry", "dep:opentelemetry-aws", "dep:opentelemetry-otlp"]

@@ -5,7 +5,8 @@ use bytes::Bytes;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 use tracing::debug;
-
+/// “Db”实例的包装器。这是为了在删除此结构时，通过发出关闭后台清除任务的信号，允许有序地清除“Db”。
+/// 
 /// A wrapper around a `Db` instance. This exists to allow orderly cleanup
 /// of the `Db` by signalling the background purge task to shut down when
 /// this struct is dropped.
@@ -15,7 +16,7 @@ pub(crate) struct DbDropGuard {
     /// is dropped.
     db: Db,
 }
-
+/// db 被创建，会生成一个任务清理过期值，进行clone时只clone ref
 /// Server state shared across all connections.
 ///
 /// `Db` contains a `HashMap` storing the key/value data and all
@@ -36,6 +37,7 @@ pub(crate) struct Db {
 }
 
 #[derive(Debug)]
+/// 共享状态由 mutex保护，Notify用于关机信号，用于通知清除资源
 struct Shared {
     /// The shared state is guarded by a mutex. This is a `std::sync::Mutex` and
     /// not a Tokio mutex. This is because there are no asynchronous operations
@@ -131,12 +133,12 @@ impl Db {
             background_task: Notify::new(),
         });
 
-        // Start the background task.
+        // Start the background task. 派生任务，去清楚过期的键
         tokio::spawn(purge_expired_tasks(shared.clone()));
 
         Db { shared }
     }
-
+    ///               相关
     /// Get the value associated with a key.
     ///
     /// Returns `None` if there is no value associated with the key. This may be
@@ -148,6 +150,7 @@ impl Db {
         // Because data is stored using `Bytes`, a clone here is a shallow
         // clone. Data is not copied.
         let state = self.shared.state.lock().unwrap();
+        // 数据存在Bytes，所以这里只是浅拷贝
         state.entries.get(key).map(|entry| entry.data.clone())
     }
 
@@ -164,7 +167,7 @@ impl Db {
         // Whether or not the task needs to be notified is computed during the
         // `set` routine.
         let mut notify = false;
-
+        // 计算过期时间是否在下一个周期内，如果在里面，则需要notify
         let expires_at = expire.map(|duration| {
             // `Instant` at which the key expires.
             let when = Instant::now() + duration;
@@ -188,7 +191,7 @@ impl Db {
                 expires_at,
             },
         );
-
+        // 如果先前存在与key关联的值，并且该值具有过期时间，那么需要从expirations映射中移除相应的条目，以避免数据泄露。
         // If there was a value previously associated with the key **and** it
         // had an expiration time. The associated entry in the `expirations` map
         // must also be removed. This avoids leaking data.
