@@ -74,8 +74,7 @@ impl Connection {
                 if self.buffer.is_empty() {
                     return Ok(None);
                 } else {
-                    let s = "connection reset by peer".into();
-                    return Err(s);
+                    return Err("connection reset by peer".into());
                 }
             }
         }
