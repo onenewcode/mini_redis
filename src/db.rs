@@ -182,7 +182,7 @@ impl Db {
 
             when
         });
-
+        // 插入前返回先前的值
         // Insert the entry into the `HashMap`.
         let prev = state.entries.insert(
             key.clone(),
@@ -195,6 +195,7 @@ impl Db {
         // If there was a value previously associated with the key **and** it
         // had an expiration time. The associated entry in the `expirations` map
         // must also be removed. This avoids leaking data.
+        // 检查类型是否为some
         if let Some(prev) = prev {
             if let Some(when) = prev.expires_at {
                 // clear expiration
