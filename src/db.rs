@@ -6,7 +6,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 use tracing::debug;
 /// “Db”实例的包装器。这是为了在删除此结构时，通过发出关闭后台清除任务的信号，允许有序地清除“Db”。
-/// 
+///
 /// A wrapper around a `Db` instance. This exists to allow orderly cleanup
 /// of the `Db` by signalling the background purge task to shut down when
 /// this struct is dropped.
@@ -213,8 +213,9 @@ impl Db {
         // Release the mutex before notifying the background task. This helps
         // reduce contention by avoiding the background task waking up only to
         // be unable to acquire the mutex due to this function still holding it.
+        //释放锁，减少竞争
         drop(state);
-
+        // 通知后台任务，清理过期的键
         if notify {
             // Finally, only notify the background task if it needs to update
             // its state to reflect a new expiration.
@@ -235,8 +236,11 @@ impl Db {
         // If there is no entry for the requested channel, then create a new
         // broadcast channel and associate it with the key. If one already
         // exists, return an associated receiver.
+        // 没有创建订阅，有返回存在的订阅
         match state.pub_sub.entry(key) {
+            // 被占用，直接返回
             Entry::Occupied(e) => e.get().subscribe(),
+            // 无占用，创建新的订阅
             Entry::Vacant(e) => {
                 // No broadcast channel exists yet, so create one.
                 //
@@ -289,6 +293,8 @@ impl Db {
 }
 
 impl Shared {
+    ///清除所有过期的密钥并返回**next** next指下一个最近要过期的键。
+    ///密钥将过期。后台任务将一直睡眠到这一刻。
     /// Purge all expired keys and return the `Instant` at which the **next**
     /// key will expire. The background task will sleep until this instant.
     fn purge_expired_keys(&self) -> Option<Instant> {
@@ -299,7 +305,10 @@ impl Shared {
             // have dropped. The background task should exit.
             return None;
         }
-
+        // 这是让借款检查人员高兴所必需的。简而言之，“lock（）”返回的是“MutexGuard”，而不是“&mut State”。借款检查器是
+        // 无法“穿透”互斥锁保护并确定它是
+        // 可以安全地可变地访问“state.expirations”和“state.entries”，
+        // 因此，我们在循环之外获得了对“State”的“真实”可变引用。
         // This is needed to make the borrow checker happy. In short, `lock()`
         // returns a `MutexGuard` and not a `&mut State`. The borrow checker is
         // not able to see "through" the mutex guard and determine that it is
@@ -311,6 +320,7 @@ impl Shared {
         let now = Instant::now();
 
         while let Some(&(when, ref key)) = state.expirations.iter().next() {
+            // 判断是否清除
             if when > now {
                 // Done purging, `when` is the instant at which the next key
                 // expires. The worker task will wait until this instant.
@@ -335,6 +345,7 @@ impl Shared {
 }
 
 impl State {
+    // 取出下一个最早过期的元素
     fn next_expiration(&self) -> Option<Instant> {
         self.expirations
             .iter()
@@ -342,7 +353,7 @@ impl State {
             .map(|expiration| expiration.0)
     }
 }
-
+/// 等待通知，清楚后台任务
 /// Routine executed by the background task.
 ///
 /// Wait to be notified. On notification, purge any expired keys from the shared
