@@ -115,7 +115,7 @@ impl Parse {
             frame => Err(format!("protocol error; expected int frame but got {:?}", frame).into()),
         }
     }
-    // 确保数组中不再有条目    
+    // 确保数组中不再有条目
     /// Ensure there are no more entries in the array
     pub(crate) fn finish(&mut self) -> Result<(), ParseError> {
         if self.parts.next().is_none() {

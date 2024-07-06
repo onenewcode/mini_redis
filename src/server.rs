@@ -23,6 +23,7 @@ struct Listener {
     ///
     /// This holds a wrapper around an `Arc`. The internal `Db` can be
     /// retrieved and passed into the per connection state (`Handler`).
+    /// 共享数据库句柄
     db_holder: DbDropGuard,
 
     /// TCP listener supplied by the `run` caller.
@@ -36,6 +37,7 @@ struct Listener {
     ///
     /// When handlers complete processing a connection, the permit is returned
     /// to the semaphore.
+    /// 令牌桶进行限制链接数量
     limit_connections: Arc<Semaphore>,
 
     /// Broadcasts a shutdown signal to all active connections.
@@ -60,12 +62,15 @@ struct Listener {
     /// complete, all clones of the `Sender` are also dropped. This results in
     /// `shutdown_complete_rx.recv()` completing with `None`. At this point, it
     /// is safe to exit the server process.
+    /// 作为优雅关机流程的一部分，用于等待客户端
+    /// 连接完成处理。
     shutdown_complete_tx: mpsc::Sender<()>,
 }
 
 /// Per-connection handler. Reads requests from `connection` and applies the
 /// commands to `db`.
 #[derive(Debug)]
+/// 链接处理器，用于操作句柄
 struct Handler {
     /// Shared database handle.
     ///
@@ -110,7 +115,7 @@ struct Handler {
 /// this is not a serious project... but I thought that about mini-http as
 /// well).
 const MAX_CONNECTIONS: usize = 250;
-
+///  接受来自提供的监听器的连接。对于每个入站连接，都会生成一个任务来处理该连接。服务器一直运行到 `shutdown` 未来完成，然后优雅地关闭。
 /// Run the mini-redis server.
 ///
 /// Accepts connections from the supplied listener. For each inbound connection,
@@ -157,6 +162,8 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
     // asynchronous Rust. See the API docs for more details:
     //
     // https://docs.rs/tokio/*/tokio/macro.select.html
+    // 服务器任务运行，直到遇到错误，因此在正常情况下，该 `select!
+    // 在正常情况下，该 `select!` 语句会一直运行到收到 `shutdown` 信号为止。
     tokio::select! {
         res = server.run() => {
             // If an error is received here, accepting connections from the TCP
@@ -178,6 +185,9 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
     // Extract the `shutdown_complete` receiver and transmitter
     // explicitly drop `shutdown_transmitter`. This is important, as the
     // `.await` below would otherwise never complete.
+    // 提取`shutdown_complete`接收器和`shutdown_transmitter`发送器。
+    // 明确放弃 `shutdown_transmitter`。这一点很重要，因为
+    // 否则，下面的 `.await` 将永远无法完成。
     let Listener {
         shutdown_complete_tx,
         notify_shutdown,
@@ -217,6 +227,7 @@ impl Listener {
         info!("accepting inbound connections");
 
         loop {
+            //许可证
             // Wait for a permit to become available
             //
             // `acquire_owned` returns a permit that is bound to the semaphore.
@@ -225,6 +236,7 @@ impl Listener {
             //
             // `acquire_owned()` returns `Err` when the semaphore has been
             // closed. We don't ever close the semaphore, so `unwrap()` is safe.
+            // 等待新连接接入
             let permit = self
                 .limit_connections
                 .clone()
@@ -267,7 +279,7 @@ impl Listener {
             });
         }
     }
-
+    /// 接受入站连接，循环，接受连接后，跳出
     /// Accept an inbound connection.
     ///
     /// Errors are handled by backing off and retrying. An exponential backoff
