@@ -19,12 +19,12 @@ pub use crate::clients::Message;
 pub struct BlockingClient {
     /// The asynchronous `Client`.
     inner: crate::clients::Client,
-
+    ///一个' current_thread '运行时，以阻塞的方式在异步客户端上执行操作。
     /// A `current_thread` runtime for executing operations on the asynchronous
     /// client in a blocking manner.
     rt: Runtime,
 }
-
+// 一旦客户端订阅了一个通道，它们可能只执行pub/sub相关的操作
 /// A client that has entered pub/sub mode.
 ///
 /// Once clients subscribe to a channel, they may only perform pub/sub related
@@ -70,6 +70,8 @@ impl BlockingClient {
     /// # drop(client);
     /// }
     /// ```
+    /// 创建一个新的 Tokio 运行时构建器，配置为使用当前线程。.enable_all() 方法使能所有的调度特性（包括 I/O、计时器和多任务）。
+    /// 最后，build()? 构建运行时并可能返回一个错误，如果构建失败，错误将被传播。
     pub fn connect<T: ToSocketAddrs>(addr: T) -> crate::Result<BlockingClient> {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
