@@ -30,6 +30,7 @@ use tracing_subscriber::{
 
 #[tokio::main]
 pub async fn main() -> mini_redis::Result<()> {
+    // 初始化日志
     set_up_logging()?;
 
     let cli = Cli::parse();
@@ -37,7 +38,7 @@ pub async fn main() -> mini_redis::Result<()> {
 
     // Bind a TCP listener
     let listener = TcpListener::bind(&format!("127.0.0.1:{}", port)).await?;
-
+    // ctrl_c 作为关机信号量
     server::run(listener, signal::ctrl_c()).await;
 
     Ok(())
