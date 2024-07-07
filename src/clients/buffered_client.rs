@@ -11,7 +11,7 @@ enum Command {
     Get(String),
     Set(String, Bytes),
 }
-
+// 通过通道发送到连接任务的消息类型。
 // Message type sent over the channel to the connection task.
 //
 // `Command` is the command to forward to the connection.
@@ -19,6 +19,7 @@ enum Command {
 // `oneshot::Sender` is a channel type that sends a **single** value. It is used
 // here to send the response received from the connection back to the original
 // requester.
+// oneshot::Sender: oneshot 是一个在 Tokio 生态系统中用于单次发送的通道类型。
 type Message = (Command, oneshot::Sender<Result<Option<Bytes>>>);
 
 /// Receive commands sent through the channel and forward them to client. The
@@ -27,6 +28,7 @@ async fn run(mut client: Client, mut rx: Receiver<Message>) {
     // Repeatedly pop messages from the channel. A return value of `None`
     // indicates that all `BufferedClient` handles have dropped and there will never be
     // another message sent on the channel.
+    // 取出数据进行处理
     while let Some((cmd, tx)) = rx.recv().await {
         // The command is forwarded to the connection
         let response = match cmd {
@@ -83,13 +85,13 @@ impl BufferedClient {
     pub async fn get(&mut self, key: &str) -> Result<Option<Bytes>> {
         // Initialize a new `Get` command to send via the channel.
         let get = Command::Get(key.into());
-
+        // //初始化一个新的oneshot，用来接收来自连接的响应。
         // Initialize a new oneshot to be used to receive the response back from the connection.
         let (tx, rx) = oneshot::channel();
 
         // Send the request
         self.tx.send((get, tx)).await?;
-
+        // 等待响应值
         // Await the response
         match rx.await {
             Ok(res) => res,
