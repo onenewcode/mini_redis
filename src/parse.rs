@@ -9,12 +9,13 @@ use std::{fmt, str, vec};
 /// "token". A `Parse` is initialized with the array frame and provides a
 /// cursor-like API. Each command struct includes a `parse_frame` method that
 /// uses a `Parse` to extract its fields.
+// 每个命令结构都包含一个“parse_frame”方法，使用“解析”来提取其字段。
 #[derive(Debug)]
 pub(crate) struct Parse {
     /// Array frame iterator.
     parts: vec::IntoIter<Frame>,
 }
-
+/// 解析帧时遇到错误。
 /// Error encountered while parsing a frame.
 ///
 /// Only `EndOfStream` errors are handled at runtime. All other errors result in
@@ -114,7 +115,7 @@ impl Parse {
             frame => Err(format!("protocol error; expected int frame but got {:?}", frame).into()),
         }
     }
-
+    // 确保数组中不再有条目
     /// Ensure there are no more entries in the array
     pub(crate) fn finish(&mut self) -> Result<(), ParseError> {
         if self.parts.next().is_none() {
