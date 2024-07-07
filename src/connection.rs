@@ -22,6 +22,7 @@ pub struct Connection {
     // The `TcpStream`. It is decorated with a `BufWriter`, which provides write
     // level buffering. The `BufWriter` implementation provided by Tokio is
     // sufficient for our needs.
+    // 让数据先写进缓冲区，减少调用
     stream: BufWriter<TcpStream>,
 
     // The buffer for reading frames.
