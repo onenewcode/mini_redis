@@ -1,5 +1,5 @@
 use tokio::sync::broadcast;
-
+/// 监听退出信号
 /// Listens for the server shutdown signal.
 ///
 /// Shutdown is signalled using a `broadcast::Receiver`. Only a single value is
