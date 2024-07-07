@@ -20,6 +20,7 @@ use tracing::{debug, instrument};
 /// the [`connect`](fn@connect) function.
 ///
 /// Requests are issued using the various methods of `Client`.
+/// 客户端
 pub struct Client {
     /// The TCP connection decorated with the redis protocol encoder / decoder
     /// implemented using a buffered `TcpStream`.
@@ -90,7 +91,7 @@ impl Client {
     /// Ping to the server.
     ///
     /// Returns PONG if no argument is provided, otherwise
-    /// return a copy of the argument as a bulk.
+    /// return a copy of the argument as a bulk. 块
     ///
     /// This command is often used to test if a connection
     /// is still alive, or to measure latency.
@@ -145,7 +146,7 @@ impl Client {
     pub async fn get(&mut self, key: &str) -> crate::Result<Option<Bytes>> {
         // Create a `Get` command for the `key` and convert it to a frame.
         let frame = Get::new(key).into_frame();
-
+        // 通常在 log 或者 tracing 中使用
         debug!(request = ?frame);
 
         // Write the frame to the socket. This writes the full frame to the
@@ -367,7 +368,7 @@ impl Client {
 
         Ok(())
     }
-
+    // 读取响应的frame
     /// Reads a response frame from the socket.
     ///
     /// If an `Error` frame is received, it is converted to `Err`.
@@ -435,13 +436,14 @@ impl Subscriber {
         // are not stable in Rust. The crate uses a macro to simulate generators
         // on top of async/await. There are limitations, so read the
         // documentation there.
+        // 一个用于创建异步流的语法糖
         try_stream! {
             while let Some(message) = self.next_message().await? {
                 yield message;
             }
         }
     }
-
+    //  订阅列表，发出订阅命令
     /// Subscribe to a list of new channels
     #[instrument(skip(self))]
     pub async fn subscribe(&mut self, channels: &[String]) -> crate::Result<()> {
@@ -464,7 +466,7 @@ impl Subscriber {
 
         // Write the frame to the socket
         self.client.connection.write_frame(&frame).await?;
-
+        // 如果为空，退订所有
         // if the input channel list is empty, server acknowledges as unsubscribing
         // from all subscribed channels, so we assert that the unsubscribe list received
         // matches the client subscribed one
@@ -473,7 +475,7 @@ impl Subscriber {
         } else {
             channels.len()
         };
-
+        // 逐个退订
         // Read the response
         for _ in 0..num {
             let response = self.client.read_response().await?;

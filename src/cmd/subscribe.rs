@@ -25,11 +25,13 @@ pub struct Subscribe {
 pub struct Unsubscribe {
     channels: Vec<String>,
 }
-
+/// 流式消息
 /// Stream of messages. The stream receives messages from the
 /// `broadcast::Receiver`. We use `stream!` to create a `Stream` that consumes
 /// messages. Because `stream!` values cannot be named, we box the stream using
 /// a trait object.
+/// Pin 是一个包装器，它用于保证在运行时 Box 中的 Stream 实例不会被移动
+/// Box 是一个智能指针，它可以持有任何类型的数据，包括那些不知道具体类型的动态大小类型，比如我们这里的 Stream trait object。
 type Messages = Pin<Box<dyn Stream<Item = Bytes> + Send>>;
 
 impl Subscribe {

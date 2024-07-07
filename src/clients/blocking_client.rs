@@ -1,7 +1,7 @@
 //! Minimal blocking Redis client implementation
 //!
 //! Provides a blocking connect and methods for issuing the supported commands.
-
+/// 最小阻塞Redis客户端实现
 use bytes::Bytes;
 use std::time::Duration;
 use tokio::net::ToSocketAddrs;
