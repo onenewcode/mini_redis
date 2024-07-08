@@ -1,20 +1,3 @@
-//! Subscribe to a redis channel example.
-//!
-//! A simple client that connects to a mini-redis server, subscribes to "foo" and "bar" channels
-//! and awaits messages published on those channels
-//!
-//! You can test this out by running:
-//!
-//!     cargo run --bin mini-redis-server
-//!
-//! Then in another terminal run:
-//!
-//!     cargo run --example sub
-//!
-//! And then in another terminal run:
-//!
-//!     cargo run --example pub
-
 #![warn(rust_2018_idioms)]
 
 use mini_redis::{clients::Client, Result};
