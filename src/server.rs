@@ -204,6 +204,7 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
     // handle held by the listener has been dropped above, the only remaining
     // `Sender` instances are held by connection handler tasks. When those drop,
     // the `mpsc` channel will close and `recv()` will return `None`.
+    // 清理完成，信号，用于正常关机后的信息处理
     let _ = shutdown_complete_rx.recv().await;
 }
 
@@ -236,7 +237,7 @@ impl Listener {
             //
             // `acquire_owned()` returns `Err` when the semaphore has been
             // closed. We don't ever close the semaphore, so `unwrap()` is safe.
-            // 等待新连接接入
+            // 从信号量，等待一个许可，用于限制链接数量
             let permit = self
                 .limit_connections
                 .clone()
@@ -247,11 +248,12 @@ impl Listener {
             // Accept a new socket. This will attempt to perform error handling.
             // The `accept` method internally attempts to recover errors, so an
             // error here is non-recoverable.
+            // 等待链接
             let socket = self.accept().await?;
 
             // Create the necessary per-connection handler state.
             let mut handler = Handler {
-                // Get a handle to the shared database.
+                // 这里clone的是一个引用arc
                 db: self.db_holder.db(),
 
                 // Initialize the connection state. This allocates read/write

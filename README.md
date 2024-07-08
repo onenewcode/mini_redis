@@ -56,3 +56,6 @@ help: to force the async block to take ownership of `v` (and any other
 因此这里咱们新引入一个 bytes 包，它包含一个 Bytes 类型，当对该类型的值进行克隆时，就不再会克隆底层数据。事实上，Bytes 是一个引用计数类型，跟 Arc 非常类似，或者准确的说，Bytes 就是基于 Arc 实现的，但相比后者Bytes 提供了一些额外的能力。
 
 cargo run --bin mini-redis-cli set foo bar
+
+# 执行流程
+首先执行servic中的run方法，然后构建一个Listener，作为服务器监听器，
