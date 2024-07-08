@@ -13,6 +13,7 @@ use std::{fmt, str, vec};
 #[derive(Debug)]
 pub(crate) struct Parse {
     /// Array frame iterator.
+    /// 进行next会消费元素
     parts: vec::IntoIter<Frame>,
 }
 /// 解析帧时遇到错误。

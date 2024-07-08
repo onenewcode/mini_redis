@@ -228,7 +228,6 @@ impl Listener {
         info!("accepting inbound connections");
 
         loop {
-            //许可证
             // Wait for a permit to become available
             //
             // `acquire_owned` returns a permit that is bound to the semaphore.
@@ -328,6 +327,7 @@ impl Handler {
     ///
     /// When the shutdown signal is received, the connection is processed until
     /// it reaches a safe state, at which point it is terminated.
+// 于追踪和分析性能的属性宏
     #[instrument(skip(self))]
     async fn run(&mut self) -> crate::Result<()> {
         // As long as the shutdown signal has not been received, try to read a
