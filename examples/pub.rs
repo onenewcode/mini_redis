@@ -1,6 +1,4 @@
 
-#![warn(rust_2018_idioms)]
-
 use mini_redis::{clients::Client, Result};
 
 #[tokio::main]
